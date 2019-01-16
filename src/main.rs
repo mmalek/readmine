@@ -17,6 +17,7 @@ enum Command {
     Login{email: Option<String>},
     Logout,
     User,
+    Time,
 }
 
 fn main() -> Result<()> {
@@ -39,6 +40,8 @@ fn main() -> Result<()> {
                     .about("log out of the Redmine server"))
         .subcommand(SubCommand::with_name("user")
                     .about("show user info"))
+        .subcommand(SubCommand::with_name("time")
+                    .about("show time entries"))
         .get_matches();
 
     let command = if let Some(matches) = matches.subcommand_matches("server") {
@@ -51,6 +54,8 @@ fn main() -> Result<()> {
         Command::Logout
     } else if matches.subcommand_matches("user").is_some() {
         Command::User
+    } else if matches.subcommand_matches("time").is_some() {
+        Command::Time
     } else {
         return Err(Error::MissingCommand);
     };
@@ -111,6 +116,28 @@ fn main() -> Result<()> {
                     let user = parse_user(&res.text()?)?;
                     println!("id: {}\nlogin: {}\nfirst name: {}\nlast name: {}\nmail: {}\ncreated on: {}\nlast login on: {}\napi key: {}",
                         user.id, user.login, user.first_name, user.last_name, user.mail, user.created_on, user.last_login_on, user.api_key);
+                } else {
+                    return Err(Error::RequestFailed(status));
+                }
+            } else {
+                println!("Server details not set. Please use \"server\" command first.")
+            }
+        }
+        Command::Time => {
+            if let Some(url) = config.url {
+                let url = format!("{}/time_entries.xml?user_id=me", url);
+                let client = Client::new();
+                let mut request_builder = client.get(&url);
+                if let Some(api_key) = config.api_key {
+                    request_builder = request_builder.header("X-Redmine-API-Key", api_key);
+                }
+                let mut res = request_builder.send()?;
+                let status = res.status();
+                if status == reqwest::StatusCode::OK {
+                    let time_entries = parse_time_entries(&res.text()?)?;
+                    for time_entry in time_entries {
+                        println!("{} - {} - {} - {}", time_entry.spent_on, time_entry.hours, time_entry.project.1, time_entry.issue_id);
+                    }
                 } else {
                     return Err(Error::RequestFailed(status));
                 }
@@ -187,4 +214,125 @@ fn parse_user(text: &str) -> Result<User> {
     }
 
     user.ok_or(Error::XmlNotParsed)
+}
+
+struct TimeEntry {
+    id: i32,
+    project: (i32, String),
+    issue_id: i32,
+    user: (i32, String),
+    activity: (i32, String),
+    hours: String,
+    comments: String,
+    spent_on: String,
+    created_on: String,
+    updated_on: String,
+}
+
+fn parse_time_entries(text: &str) -> Result<Vec<TimeEntry>> {
+    let mut reader = Reader::from_str(text);
+    reader.trim_text(true);
+
+    let mut buf = Vec::new();
+
+    let mut time_entries: Option<Vec<TimeEntry>> = None;
+    let mut time_entry: Option<TimeEntry> = None;
+    let mut element = Vec::<u8>::new();
+
+    loop {
+        match reader.read_event(&mut buf)? {
+            Event::Start(ref e) => {
+                match e.name() {
+                    b"time_entries" => time_entries = Some(Vec::new()),
+                    b"time_entry" => {
+                        element.clear();
+                        time_entry = Some(TimeEntry{
+                            id: -1,
+                            project: (-1, String::new()),
+                            issue_id: -1,
+                            user: (-1, String::new()),
+                            activity: (-1, String::new()),
+                            hours: String::new(),
+                            comments: String::new(),
+                            spent_on: String::new(),
+                            created_on: String::new(),
+                            updated_on: String::new(),
+                        })
+                    }
+                    _ => element = e.name().to_owned(),
+                }
+            }
+            Event::End(ref e) => {
+                match e.name() {
+                    b"time_entry" => {
+                        element.clear();
+                        if let Some(time_entry) = time_entry {
+                            if let Some(ref mut time_entries) = time_entries {
+                                time_entries.push(time_entry);
+                            }
+                        }
+                        time_entry = None;
+                    }
+                    _ => {}
+                }
+            }
+            Event::Empty(ref e) => {
+                match e.name() {
+                    b"project" => if let Some(ref mut time_entry) = time_entry { time_entry.project = get_id_and_name_attrs(e.attributes())?; },
+                    b"user" => if let Some(ref mut time_entry) = time_entry { time_entry.user = get_id_and_name_attrs(e.attributes())?; },
+                    b"activity" => if let Some(ref mut time_entry) = time_entry { time_entry.activity = get_id_and_name_attrs(e.attributes())?; },
+                    b"issue" => if let Some(ref mut time_entry) = time_entry { time_entry.issue_id = get_id_attr(e.attributes())?; },
+                    _ => {}
+                }
+            }
+            Event::Text(e) => {
+                let contents = e.unescape_and_decode(&reader)?;
+                if let Some(ref mut time_entry) = time_entry {
+                    match &element[..] {
+                        b"id" =>  time_entry.id = contents.parse()?,
+                        b"hours" => time_entry.hours = contents,
+                        b"comments" => time_entry.comments = contents,
+                        b"spent_on" => time_entry.spent_on = contents,
+                        b"created_on" => time_entry.created_on = contents,
+                        b"updated_on" => time_entry.updated_on = contents,
+                        _ => {}
+                    }
+                }
+            }
+            Event::Eof => {
+                break; // exits the loop when reaching end of file
+            }
+            _ => (), // There are several other `Event`s we do not consider here
+        }
+    }
+
+    time_entries.ok_or(Error::XmlNotParsed)
+}
+
+fn get_id_and_name_attrs(attributes: quick_xml::events::attributes::Attributes) -> Result<(i32, String)> {
+    let mut id: i32 = -1;
+    let mut name = String::new();
+    for attr in attributes {
+        let attr = attr?;
+        let value = std::str::from_utf8(&attr.value[..])?;
+        match attr.key {
+            b"id" => id = value.parse()?,
+            b"name" => name = value.to_owned(),
+            _ => {}
+        }
+    }
+    Ok((id, name))
+}
+
+fn get_id_attr(attributes: quick_xml::events::attributes::Attributes) -> Result<i32> {
+    for attr in attributes {
+        let attr = attr?;
+        let value = std::str::from_utf8(&attr.value[..])?;
+        match attr.key {
+            b"id" => return Ok(value.parse()?),
+            _ => {}
+        }
+    }
+
+    Ok(-1)
 }

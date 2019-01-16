@@ -1,6 +1,7 @@
 use std::fmt;
 use std::io;
 use std::num::ParseIntError;
+use std::str::Utf8Error;
 use quick_xml;
 use reqwest;
 use toml;
@@ -19,6 +20,7 @@ pub enum Error {
     XmlParse(quick_xml::Error),
     XmlNotParsed,
     IntParse(ParseIntError),
+    Utf8Parse(Utf8Error),
 }
 
 impl From<io::Error> for Error {
@@ -63,6 +65,12 @@ impl From<ParseIntError> for Error {
     }
 }
 
+impl From<Utf8Error> for Error {
+    fn from(error: Utf8Error) -> Self {
+        Error::Utf8Parse(error)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -77,6 +85,7 @@ impl fmt::Display for Error {
             Error::XmlParse(error) => write!(f, "XML parse error: {}", error),
             Error::XmlNotParsed => write!(f, "XML response has not been parsed correctly"),
             Error::IntParse(error) => write!(f, "Int parse error: {}", error),
+            Error::Utf8Parse(error) => write!(f, "UTF-8 parse error: {}", error),
         }
     }
 }
