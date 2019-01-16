@@ -1,0 +1,17 @@
+[package]
+name = "readmine"
+version = "0.1.0"
+authors = ["Michał Małek <michalm@fastmail.fm>"]
+edition = "2018"
+
+[dependencies]
+clap = '~2.32'
+directories = '~1.0'
+hyper = '0.12'
+hyper-tls = '0.3.1'
+quick-xml = '0.13.2'
+reqwest = '0.9.8'
+rpassword = '~2.1'
+serde = { version = '~1.0', features = ['derive'] }
+toml = '0.4.6'
+url = '~1.7'
