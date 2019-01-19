@@ -9,7 +9,6 @@ use url;
 
 #[derive(Debug)]
 pub enum Error {
-    MissingCommand,
     Io(io::Error),
     ProjectDirs,
     ConfigLoad(toml::de::Error),
@@ -22,6 +21,8 @@ pub enum Error {
     IntParse(ParseIntError),
     Utf8Parse(Utf8Error),
 }
+
+impl std::error::Error for Error {}
 
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Self {
@@ -74,7 +75,6 @@ impl From<Utf8Error> for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::MissingCommand => write!(f, "Missing subcommand"),
             Error::Io(error) => write!(f, "IO error: {}", error),
             Error::ProjectDirs => write!(f, "Cannot locate application config directory"),
             Error::ConfigLoad(error) => write!(f, "Config reading error: {}", error),
