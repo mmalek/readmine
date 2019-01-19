@@ -20,7 +20,7 @@ pub fn login(url: &String, login_name: Option<String>) -> Result<User> {
     let password = read_password_from_tty(Some("Password: "))?;
     println!();
 
-    let url = format!("{}/users/current.xml", url);
+    let url = format!("{}/users/current.json", url);
     let client = Client::new();
     let mut res = client.get(&url).basic_auth(&login_name, Some(&password)).send()?;
     let status = res.status();
@@ -32,7 +32,7 @@ pub fn login(url: &String, login_name: Option<String>) -> Result<User> {
 }
 
 pub fn user(url: &String, api_key: &Option<String>) -> Result<User> {
-    let url = format!("{}/users/current.xml", url);
+    let url = format!("{}/users/current.json", url);
     let client = Client::new();
     let mut request_builder = client.get(&url);
     if let Some(api_key) = api_key {
@@ -48,7 +48,7 @@ pub fn user(url: &String, api_key: &Option<String>) -> Result<User> {
 }
 
 pub fn time(url: &String, api_key: &Option<String>) -> Result<Vec<TimeEntry>> {
-    let url = format!("{}/time_entries.xml?user_id=me", url);
+    let url = format!("{}/time_entries.json?user_id=me", url);
     let client = Client::new();
     let mut request_builder = client.get(&url);
     if let Some(api_key) = api_key {

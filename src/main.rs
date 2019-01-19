@@ -88,7 +88,7 @@ fn run_command(command: Command) -> Result<()> {
             if let Some(url) = &config.url {
                 let user = request::user(url, &config.api_key)?;
                 println!("id: {}\nlogin: {}\nfirst name: {}\nlast name: {}\nmail: {}\ncreated on: {}\nlast login on: {}\napi key: {}",
-                    user.id, user.login, user.first_name, user.last_name, user.mail, user.created_on, user.last_login_on, user.api_key)
+                    user.id, user.login, user.firstname, user.lastname, user.mail, user.created_on, user.last_login_on, user.api_key)
             } else {
                 println!("Server details not set. Please use \"server\" command first.");
             };
@@ -98,7 +98,7 @@ fn run_command(command: Command) -> Result<()> {
             if let Some(url) = &config.url {
                 let time_entries = request::time(url, &config.api_key)?;
                 for time_entry in time_entries {
-                    println!("{} - {} - {} - {}", time_entry.spent_on, time_entry.hours, time_entry.project.1, time_entry.issue_id);
+                    println!("{} - {:.1} - {} - {}", time_entry.spent_on, time_entry.hours, time_entry.project.name, time_entry.issue.id);
                 }
             } else {
                 println!("Server details not set. Please use \"server\" command first.");
