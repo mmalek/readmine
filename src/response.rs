@@ -1,4 +1,5 @@
 use crate::result::Result;
+use chrono::prelude::*;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
@@ -33,9 +34,12 @@ pub struct TimeEntry {
     pub activity: TimeEntryActivity,
     pub hours: f32,
     pub comments: String,
-    pub spent_on: String,
-    pub created_on: String,
-    pub updated_on: String,
+    #[serde(with = "redmine_date_format")]
+    pub spent_on: NaiveDate,
+    #[serde(with = "redmine_datetime_format")]
+    pub created_on: NaiveDateTime,
+    #[serde(with = "redmine_datetime_format")]
+    pub updated_on: NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -69,4 +73,60 @@ pub struct TimeEntriesResponse {
 pub fn parse_time_entries(text: &str) -> Result<Vec<TimeEntry>> {
     let response: TimeEntriesResponse = serde_json::from_str(text)?;
     Ok(response.time_entries)
+}
+
+mod redmine_date_format {
+    use chrono::NaiveDate;
+    use serde::{self, Deserialize, Serializer, Deserializer};
+
+    const FORMAT: &'static str = "%Y-%m-%d";
+
+    pub fn serialize<S>(
+        date: &NaiveDate,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = format!("{}", date.format(FORMAT));
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> Result<NaiveDate, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        NaiveDate::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
+    }
+}
+
+mod redmine_datetime_format {
+    use chrono::NaiveDateTime;
+    use serde::{self, Deserialize, Serializer, Deserializer};
+
+    const FORMAT: &'static str = "%Y-%m-%dT%H:%M:%SZ";
+
+    pub fn serialize<S>(
+        date: &NaiveDateTime,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = format!("{}", date.format(FORMAT));
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> Result<NaiveDateTime, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        NaiveDateTime::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
+    }
 }
