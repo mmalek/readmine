@@ -1,6 +1,8 @@
+use crate::constants::DATE_FORMAT;
 use crate::error::Error;
 use crate::result::Result;
 use crate::response::*;
+use chrono::{Datelike, Duration, Local};
 use reqwest::Client;
 use rpassword::read_password_from_tty;
 use std::io::{self, Write};
@@ -48,7 +50,14 @@ pub fn user(url: &String, api_key: &Option<String>) -> Result<User> {
 }
 
 pub fn time(url: &String, api_key: &Option<String>) -> Result<Vec<TimeEntry>> {
-    let url = format!("{}/time_entries.json?user_id=me", url);
+    let today = Local::today();
+    let from = today - Duration::days(today.weekday().num_days_from_monday() as i64);
+    let to = from + Duration::days(6);
+
+    let from = from.format(DATE_FORMAT).to_string();
+    let to = to.format(DATE_FORMAT).to_string();
+    let url = format!("{}/time_entries.json?user_id=me&from={}&to={}", url, from, to);
+
     let client = Client::new();
     let mut request_builder = client.get(&url);
     if let Some(api_key) = api_key {

@@ -76,10 +76,9 @@ pub fn parse_time_entries(text: &str) -> Result<Vec<TimeEntry>> {
 }
 
 mod redmine_date_format {
+    use crate::constants::DATE_FORMAT;
     use chrono::NaiveDate;
     use serde::{self, Deserialize, Serializer, Deserializer};
-
-    const FORMAT: &'static str = "%Y-%m-%d";
 
     pub fn serialize<S>(
         date: &NaiveDate,
@@ -88,7 +87,7 @@ mod redmine_date_format {
     where
         S: Serializer,
     {
-        let s = format!("{}", date.format(FORMAT));
+        let s = format!("{}", date.format(DATE_FORMAT));
         serializer.serialize_str(&s)
     }
 
@@ -99,15 +98,14 @@ mod redmine_date_format {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        NaiveDate::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
+        NaiveDate::parse_from_str(&s, DATE_FORMAT).map_err(serde::de::Error::custom)
     }
 }
 
 mod redmine_datetime_format {
+    use crate::constants::DATE_TIME_FORMAT;
     use chrono::NaiveDateTime;
     use serde::{self, Deserialize, Serializer, Deserializer};
-
-    const FORMAT: &'static str = "%Y-%m-%dT%H:%M:%SZ";
 
     pub fn serialize<S>(
         date: &NaiveDateTime,
@@ -116,7 +114,7 @@ mod redmine_datetime_format {
     where
         S: Serializer,
     {
-        let s = format!("{}", date.format(FORMAT));
+        let s = format!("{}", date.format(DATE_TIME_FORMAT));
         serializer.serialize_str(&s)
     }
 
@@ -127,6 +125,6 @@ mod redmine_datetime_format {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        NaiveDateTime::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
+        NaiveDateTime::parse_from_str(&s, DATE_TIME_FORMAT).map_err(serde::de::Error::custom)
     }
 }
