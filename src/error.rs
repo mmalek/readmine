@@ -4,6 +4,7 @@ use std::num::ParseIntError;
 use std::str::Utf8Error;
 use reqwest;
 use serde_json;
+use term;
 use toml;
 use url;
 
@@ -19,6 +20,8 @@ pub enum Error {
     JsonParse(serde_json::Error),
     IntParse(ParseIntError),
     Utf8Parse(Utf8Error),
+    CannotOpenTerminal,
+    Terminal(term::Error)
 }
 
 impl std::error::Error for Error {}
@@ -71,6 +74,12 @@ impl From<Utf8Error> for Error {
     }
 }
 
+impl From<term::Error> for Error {
+    fn from(error: term::Error) -> Self {
+        Error::Terminal(error)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -84,6 +93,8 @@ impl fmt::Display for Error {
             Error::JsonParse(error) => write!(f, "JSON parse error: {}", error),
             Error::IntParse(error) => write!(f, "Int parse error: {}", error),
             Error::Utf8Parse(error) => write!(f, "UTF-8 parse error: {}", error),
+            Error::CannotOpenTerminal => write!(f, "Cannot open terminal interface"),
+            Error::Terminal(error) => write!(f, "Terminal error: {}", error),
         }
     }
 }

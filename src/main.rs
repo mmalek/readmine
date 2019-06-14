@@ -6,8 +6,10 @@ mod response;
 mod result;
 
 use crate::config::Config;
+use crate::error::Error;
 use crate::result::Result;
 use clap::{App, AppSettings, Arg, SubCommand};
+use term;
 
 enum Command {
     Server{url: String},
@@ -97,12 +99,31 @@ fn run_command(command: Command) -> Result<()> {
         }
         Command::Time => {
             if let Some(url) = &config.url {
+                let mut t = term::stdout().ok_or(Error::CannotOpenTerminal)?;
                 let time_entries = request::time(url, &config.api_key)?;
                 let total = time_entries.iter().fold(0.0, |sum, entry| sum + entry.hours);
+                let max_project_title_len = time_entries.iter()
+                    .map(|entry| entry.project.name.len())
+                    .max()
+                    .unwrap_or(0);
                 for entry in time_entries {
-                    println!("{} - {}h - {} ({}) - {}", entry.spent_on, entry.hours, entry.project.name, entry.issue.id, entry.comments);
+                    t.fg(term::color::WHITE)?;
+                    write!(t, "{}   ", entry.spent_on)?;
+                    t.attr(term::Attr::Bold)?;
+                    t.fg(term::color::WHITE)?;
+                    write!(t, "{}", entry.hours)?;
+                    t.reset()?;
+                    write!(t, "h   #{} {:width$}   ", entry.issue.id, entry.project.name, width=max_project_title_len)?;
+                    t.fg(term::color::YELLOW)?;
+                    writeln!(t, "{}", entry.comments)?;
                 }
-                println!("Total time: {}h", total);
+                t.fg(term::color::WHITE)?;
+                write!(t, "Total time: ")?;
+                t.attr(term::Attr::Bold)?;
+                t.fg(term::color::WHITE)?;
+                write!(t, "{}", total)?;
+                t.reset()?;
+                writeln!(t, "h")?;
             } else {
                 println!("Server details not set. Please use \"server\" command first.");
             };
