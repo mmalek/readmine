@@ -98,9 +98,11 @@ fn run_command(command: Command) -> Result<()> {
         Command::Time => {
             if let Some(url) = &config.url {
                 let time_entries = request::time(url, &config.api_key)?;
-                for time_entry in time_entries {
-                    println!("{} - {:.1} - {} - {}", time_entry.spent_on, time_entry.hours, time_entry.project.name, time_entry.issue.id);
+                let total = time_entries.iter().fold(0.0, |sum, entry| sum + entry.hours);
+                for entry in time_entries {
+                    println!("{} - {}h - {} ({}) - {}", entry.spent_on, entry.hours, entry.project.name, entry.issue.id, entry.comments);
                 }
+                println!("Total time: {}h", total);
             } else {
                 println!("Server details not set. Please use \"server\" command first.");
             };
