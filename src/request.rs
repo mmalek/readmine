@@ -8,16 +8,16 @@ use rpassword::read_password_from_tty;
 use std::io::{self, Write};
 
 pub fn login(url: &String, login_name: Option<String>) -> Result<User> {
-    let login_name = login_name
-        .map(|s| -> Result<String> { Ok(s) })
-        .unwrap_or_else(|| {
-            print!("Login: ");
-            io::stdout().flush()?;
-            let mut login_name = String::new();
-            io::stdin().read_line(&mut login_name)?;
-            login_name.retain(|c| c != '\n' && c != '\r');
-            Ok(login_name)
-        })?;
+    let login_name = if let Some(name) = login_name {
+        name
+    } else {
+        print!("Login: ");
+        io::stdout().flush()?;
+        let mut login_name = String::new();
+        io::stdin().read_line(&mut login_name)?;
+        login_name.retain(|c| c != '\n' && c != '\r');
+        login_name
+    };
 
     let password = read_password_from_tty(Some("Password: "))?;
     println!();
