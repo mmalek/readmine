@@ -12,8 +12,7 @@ use clap::{App, AppSettings, Arg, SubCommand};
 use term;
 
 enum Command {
-    Server{url: String},
-    Login{email: Option<String>},
+    Login{url: String, email: Option<String>},
     Logout,
     User,
     Time,
@@ -24,17 +23,15 @@ fn main() {
         .setting(AppSettings::SubcommandRequired)
         .version("0.1")
         .about("Redmine client")
-        .subcommand(SubCommand::with_name("server")
-                    .about("sets up Redmine server details")
+        .subcommand(SubCommand::with_name("login")
+                    .about("login to the Redmine server")
                     .arg(Arg::with_name("url")
                         .help("Full address of the Redmine server, e.g. \"http://www.redmine.org\"")
                         .index(1)
-                        .required(true)))
-        .subcommand(SubCommand::with_name("login")
-                    .about("login to the Redmine server")
+                        .required(true))
                     .arg(Arg::with_name("name")
                         .help("user login name")
-                        .index(1)))
+                        .index(2)))
         .subcommand(SubCommand::with_name("logout")
                     .about("log out of the Redmine server"))
         .subcommand(SubCommand::with_name("user")
@@ -43,12 +40,10 @@ fn main() {
                     .about("show time entries"))
         .get_matches();
 
-    let command = if let Some(matches) = matches.subcommand_matches("server") {
+    let command = if let Some(matches) = matches.subcommand_matches("login") {
         let url = matches.value_of("url").expect("missing \"url\" parameter in \"server\" command").to_string();
-        Command::Server{url}
-    } else if let Some(matches) = matches.subcommand_matches("login") {
-        let email = matches.value_of("email").map(str::to_string);
-        Command::Login{email}
+        let email = matches.value_of("name").map(str::to_string);
+        Command::Login{url, email}
     } else if matches.subcommand_matches("logout").is_some() {
         Command::Logout
     } else if matches.subcommand_matches("user").is_some() {
@@ -69,21 +64,14 @@ fn run_command(command: Command) -> Result<()> {
     let mut config = Config::load()?;
 
     match command {
-        Command::Server{url} => {
+        Command::Login{url, email} => {
+            let user = request::login(&url, email)?;
             config.url = Some(url);
+            config.api_key = Some(user.api_key);
             config.save()
         }
-        Command::Login{email} => {
-            if let Some(url) = &config.url {
-                let user = request::login(url, email)?;
-                config.api_key = Some(user.api_key);
-                config.save()
-            } else {
-                println!("Server details not set. Please use \"server\" command first.");
-                Ok(())
-            }
-        }
         Command::Logout => {
+            config.url = None;
             config.api_key = None;
             config.save()
         }
@@ -93,7 +81,7 @@ fn run_command(command: Command) -> Result<()> {
                 println!("id: {}\nlogin: {}\nfirst name: {}\nlast name: {}\nmail: {}\ncreated on: {}\nlast login on: {}\napi key: {}",
                     user.id, user.login, user.firstname, user.lastname, user.mail, user.created_on, user.last_login_on, user.api_key)
             } else {
-                println!("Server details not set. Please use \"server\" command first.");
+                println!("Server details not set. Please use \"login\" command first.");
             };
             Ok(())
         }
@@ -125,7 +113,7 @@ fn run_command(command: Command) -> Result<()> {
                 t.reset()?;
                 writeln!(t, "h")?;
             } else {
-                println!("Server details not set. Please use \"server\" command first.");
+                println!("Server details not set. Please use \"login\" command first.");
             };
             Ok(())
         }
