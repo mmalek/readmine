@@ -1,7 +1,8 @@
 use std::fmt;
 use std::io;
-use std::num::ParseIntError;
+use std::num::{ParseFloatError, ParseIntError};
 use std::str::Utf8Error;
+use chrono;
 use reqwest;
 use serde_json;
 use term;
@@ -18,10 +19,12 @@ pub enum Error {
     Reqwest(reqwest::Error),
     RequestFailed(reqwest::StatusCode),
     JsonParse(serde_json::Error),
+    FloatParse(ParseFloatError),
     IntParse(ParseIntError),
     Utf8Parse(Utf8Error),
     CannotOpenTerminal,
-    Terminal(term::Error)
+    Terminal(term::Error),
+    ChronoParse(chrono::ParseError),
 }
 
 impl std::error::Error for Error {}
@@ -62,6 +65,12 @@ impl From<serde_json::Error> for Error {
     }
 }
 
+impl From<ParseFloatError> for Error {
+    fn from(error: ParseFloatError) -> Self {
+        Error::FloatParse(error)
+    }
+}
+
 impl From<ParseIntError> for Error {
     fn from(error: ParseIntError) -> Self {
         Error::IntParse(error)
@@ -80,6 +89,12 @@ impl From<term::Error> for Error {
     }
 }
 
+impl From<chrono::ParseError> for Error {
+    fn from(error: chrono::ParseError) -> Self {
+        Error::ChronoParse(error)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -91,10 +106,12 @@ impl fmt::Display for Error {
             Error::Reqwest(error) => write!(f, "Web request failed: {}", error),
             Error::RequestFailed(status) => write!(f, "Request failed ({})", status),
             Error::JsonParse(error) => write!(f, "JSON parse error: {}", error),
+            Error::FloatParse(error) => write!(f, "Float parse error: {}", error),
             Error::IntParse(error) => write!(f, "Int parse error: {}", error),
             Error::Utf8Parse(error) => write!(f, "UTF-8 parse error: {}", error),
             Error::CannotOpenTerminal => write!(f, "Cannot open terminal interface"),
             Error::Terminal(error) => write!(f, "Terminal error: {}", error),
+            Error::ChronoParse(error) => write!(f, "Date/time parse error: {}", error),
         }
     }
 }

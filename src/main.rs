@@ -4,10 +4,13 @@ mod error;
 mod request;
 mod response;
 mod result;
+mod serialization_formats;
 
 use crate::config::Config;
+use crate::constants::DATE_FORMAT;
 use crate::error::Error;
 use crate::result::Result;
+use chrono::prelude::*;
 use clap::{App, AppSettings, Arg, SubCommand};
 use term;
 
@@ -16,9 +19,17 @@ enum Command {
     Logout,
     User,
     Time,
+    TimeAdd(request::TimeEntry),
 }
 
 fn main() {
+    if let Err(error) = just_run() {
+        eprintln!("{}", error);
+        std::process::exit(1);
+    }
+}
+
+fn just_run() -> Result<()> {
     let matches = App::new("readmine")
         .setting(AppSettings::SubcommandRequired)
         .version("0.1")
@@ -37,7 +48,12 @@ fn main() {
         .subcommand(SubCommand::with_name("user")
                     .about("show user info"))
         .subcommand(SubCommand::with_name("time")
-                    .about("show time entries"))
+                    .about("show/add time entries")
+                    .subcommand(SubCommand::with_name("add")
+                        .arg(Arg::with_name("date").index(1).required(true))
+                        .arg(Arg::with_name("hours").index(2).required(true))
+                        .arg(Arg::with_name("issue_id").index(3).required(true))
+                        .arg(Arg::with_name("comment").index(4))))
         .get_matches();
 
     let command = if let Some(matches) = matches.subcommand_matches("login") {
@@ -48,16 +64,23 @@ fn main() {
         Command::Logout
     } else if matches.subcommand_matches("user").is_some() {
         Command::User
-    } else if matches.subcommand_matches("time").is_some() {
-        Command::Time
+    } else if let Some(matches) = matches.subcommand_matches("time") {
+        if let Some(matches) = matches.subcommand_matches("add") {
+            let spent_on = matches.value_of("date").expect("missing \"date\" parameter in \"time add\" command");
+            let spent_on = NaiveDate::parse_from_str(spent_on, DATE_FORMAT)?;
+            let hours: f32 = matches.value_of("hours").expect("missing \"hours\" parameter in \"time add\" command").parse()?;
+            let issue_id: i32 = matches.value_of("issue_id").expect("missing \"issue_id\" parameter in \"time add\" command").parse()?;
+            let comments = matches.value_of("comment").map(str::to_string);
+            let activity_id = 9;
+            Command::TimeAdd(request::TimeEntry{issue_id, spent_on, hours, activity_id, comments})
+        } else {
+            Command::Time
+        }
     } else {
         unreachable!();
     };
 
-    if let Err(error) = run_command(command) {
-        eprintln!("{}", error);
-        std::process::exit(1);
-    }
+    run_command(command)
 }
 
 fn run_command(command: Command) -> Result<()> {
@@ -116,6 +139,14 @@ fn run_command(command: Command) -> Result<()> {
                 println!("Server details not set. Please use \"login\" command first.");
             };
             Ok(())
+        }
+        Command::TimeAdd(time_entry) => {
+            if let Some(url) = &config.url {
+                request::time_add(url, &config.api_key, time_entry)
+            } else {
+                println!("Server details not set. Please use \"login\" command first.");
+                Ok(())
+            }
         }
     }
 }

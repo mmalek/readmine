@@ -1,4 +1,5 @@
 use crate::result::Result;
+use crate::serialization_formats::*;
 use chrono::prelude::*;
 use serde::{Serialize, Deserialize};
 use serde_json;
@@ -73,58 +74,4 @@ pub struct TimeEntriesResponse {
 pub fn parse_time_entries(text: &str) -> Result<Vec<TimeEntry>> {
     let response: TimeEntriesResponse = serde_json::from_str(text)?;
     Ok(response.time_entries)
-}
-
-mod redmine_date_format {
-    use crate::constants::DATE_FORMAT;
-    use chrono::NaiveDate;
-    use serde::{self, Deserialize, Serializer, Deserializer};
-
-    pub fn serialize<S>(
-        date: &NaiveDate,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let s = format!("{}", date.format(DATE_FORMAT));
-        serializer.serialize_str(&s)
-    }
-
-    pub fn deserialize<'de, D>(
-        deserializer: D,
-    ) -> Result<NaiveDate, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        NaiveDate::parse_from_str(&s, DATE_FORMAT).map_err(serde::de::Error::custom)
-    }
-}
-
-mod redmine_datetime_format {
-    use crate::constants::DATE_TIME_FORMAT;
-    use chrono::NaiveDateTime;
-    use serde::{self, Deserialize, Serializer, Deserializer};
-
-    pub fn serialize<S>(
-        date: &NaiveDateTime,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let s = format!("{}", date.format(DATE_TIME_FORMAT));
-        serializer.serialize_str(&s)
-    }
-
-    pub fn deserialize<'de, D>(
-        deserializer: D,
-    ) -> Result<NaiveDateTime, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        NaiveDateTime::parse_from_str(&s, DATE_TIME_FORMAT).map_err(serde::de::Error::custom)
-    }
 }
