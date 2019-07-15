@@ -4,6 +4,7 @@ use std::num::{ParseFloatError, ParseIntError};
 use std::str::Utf8Error;
 use chrono;
 use reqwest;
+use crate::response::TimeEntryActivity;
 use serde_json;
 use term;
 use toml;
@@ -25,6 +26,7 @@ pub enum Error {
     CannotOpenTerminal,
     Terminal(term::Error),
     ChronoParse(chrono::ParseError),
+    InvalidActivityName(String, Vec<TimeEntryActivity>),
 }
 
 impl std::error::Error for Error {}
@@ -112,6 +114,11 @@ impl fmt::Display for Error {
             Error::CannotOpenTerminal => write!(f, "Cannot open terminal interface"),
             Error::Terminal(error) => write!(f, "Terminal error: {}", error),
             Error::ChronoParse(error) => write!(f, "Date/time parse error: {}", error),
+            Error::InvalidActivityName(provided_name, activities) => {
+                let first_name = activities.first().map(|a| a.name.clone()).unwrap_or("".to_string());
+                let names = activities.iter().skip(1).fold(first_name, |names, a| format!("{}, {}", names, a.name));
+                write!(f, "Invalid activity name \"{}\". Available values: {}", provided_name, names)
+            }
         }
     }
 }

@@ -74,6 +74,22 @@ pub fn time(url: &String, api_key: &Option<String>) -> Result<Vec<response::Time
     }
 }
 
+pub fn activities(url: &String, api_key: &Option<String>) -> Result<Vec<response::TimeEntryActivity>> {
+    let url = format!("{}/enumerations/time_entry_activities.json", url);
+    let client = Client::new();
+    let mut request_builder = client.get(&url);
+    if let Some(api_key) = api_key {
+        request_builder = request_builder.header("X-Redmine-API-Key", api_key.clone());
+    }
+    let mut res = request_builder.send()?;
+    let status = res.status();
+    if status == reqwest::StatusCode::OK {
+        response::parse_time_entry_activities(&res.text()?)
+    } else {
+        Err(Error::RequestFailed(status))
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct TimeEntryRequest {
     pub time_entry: TimeEntry,

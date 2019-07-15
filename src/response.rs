@@ -54,7 +54,7 @@ pub struct TimeEntryIssue {
     pub id: i32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TimeEntryActivity {
     pub id: i32,
     pub name: String,
@@ -74,4 +74,14 @@ pub struct TimeEntriesResponse {
 pub fn parse_time_entries(text: &str) -> Result<Vec<TimeEntry>> {
     let response: TimeEntriesResponse = serde_json::from_str(text)?;
     Ok(response.time_entries)
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct TimeEntryResponse {
+    pub time_entry_activities: Vec<TimeEntryActivity>
+}
+
+pub fn parse_time_entry_activities(text: &str) -> Result<Vec<TimeEntryActivity>> {
+    let response: TimeEntryResponse = serde_json::from_str(text)?;
+    Ok(response.time_entry_activities)
 }

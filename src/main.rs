@@ -19,7 +19,30 @@ enum Command {
     Logout,
     User,
     Time,
-    TimeAdd(request::TimeEntry),
+    TimeAdd(TimeEntry),
+}
+
+pub struct TimeEntry {
+    pub issue_id: i32,
+    pub spent_on: NaiveDate,
+    pub hours: f32,
+    pub activity_name: String,
+    pub comments: Option<String>,
+}
+
+impl TimeEntry {
+    fn into_request(self, activities: &Vec<response::TimeEntryActivity>) -> Result<request::TimeEntry> {
+        activities.iter()
+            .find(|activity| self.activity_name == activity.name)
+            .ok_or_else(|| error::Error::InvalidActivityName(self.activity_name.clone(), activities.clone()))
+            .map(|activity| request::TimeEntry{
+                issue_id: self.issue_id,
+                spent_on: self.spent_on,
+                hours: self.hours,
+                comments: self.comments,
+                activity_id: activity.id,
+            })
+    }
 }
 
 fn main() {
@@ -53,7 +76,8 @@ fn just_run() -> Result<()> {
                         .arg(Arg::with_name("date").index(1).required(true))
                         .arg(Arg::with_name("hours").index(2).required(true))
                         .arg(Arg::with_name("issue_id").index(3).required(true))
-                        .arg(Arg::with_name("comment").index(4))))
+                        .arg(Arg::with_name("activity").index(4).required(true))
+                        .arg(Arg::with_name("comment").index(5))))
         .get_matches();
 
     let command = if let Some(matches) = matches.subcommand_matches("login") {
@@ -70,9 +94,9 @@ fn just_run() -> Result<()> {
             let spent_on = NaiveDate::parse_from_str(spent_on, DATE_FORMAT)?;
             let hours: f32 = matches.value_of("hours").expect("missing \"hours\" parameter in \"time add\" command").parse()?;
             let issue_id: i32 = matches.value_of("issue_id").expect("missing \"issue_id\" parameter in \"time add\" command").parse()?;
+            let activity_name = matches.value_of("activity").expect("missing \"activity\" parameter in \"time add\" command").to_string();
             let comments = matches.value_of("comment").map(str::to_string);
-            let activity_id = 9;
-            Command::TimeAdd(request::TimeEntry{issue_id, spent_on, hours, activity_id, comments})
+            Command::TimeAdd(TimeEntry{issue_id, spent_on, hours, activity_name, comments})
         } else {
             Command::Time
         }
@@ -142,6 +166,8 @@ fn run_command(command: Command) -> Result<()> {
         }
         Command::TimeAdd(time_entry) => {
             if let Some(url) = &config.url {
+                let activities = request::activities(url, &config.api_key)?;
+                let time_entry = time_entry.into_request(&activities)?;
                 request::time_add(url, &config.api_key, time_entry)
             } else {
                 println!("Server details not set. Please use \"login\" command first.");
