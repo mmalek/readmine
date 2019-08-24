@@ -5,11 +5,13 @@ mod request;
 mod response;
 mod result;
 mod serialization_formats;
+mod time_range;
 
 use crate::config::Config;
 use crate::constants::DATE_FORMAT;
 use crate::error::Error;
 use crate::result::Result;
+use crate::time_range::TimeRange;
 use chrono::prelude::*;
 use clap::{App, AppSettings, Arg, SubCommand};
 use term;
@@ -18,7 +20,7 @@ enum Command {
     Login{url: String, email: Option<String>},
     Logout,
     User,
-    Time,
+    Time(TimeRange),
     TimeAdd(TimeEntry),
 }
 
@@ -72,6 +74,15 @@ fn just_run() -> Result<()> {
                     .about("show user info"))
         .subcommand(SubCommand::with_name("time")
                     .about("show/add time entries")
+                    .arg(Arg::with_name("range")
+                        .help("time range for showing time ranges: 2019-01-23..2019-05-09, \
+                               week (current week), \
+                               month (current month), \
+                               week-1 (last week), week-2 (the week before last),
+                               month-1 (last month),
+                               month-1..week-1 (from the beginning of last month to the end of last week) etc.")
+                        .default_value("week")
+                        .index(1))
                     .subcommand(SubCommand::with_name("add")
                         .arg(Arg::with_name("date").index(1).required(true))
                         .arg(Arg::with_name("hours").index(2).required(true))
@@ -98,7 +109,7 @@ fn just_run() -> Result<()> {
             let comments = matches.value_of("comment").map(str::to_string);
             Command::TimeAdd(TimeEntry{issue_id, spent_on, hours, activity_name, comments})
         } else {
-            Command::Time
+            Command::Time(TimeRange::parse(matches.value_of("range").expect("missing \"range\" parameter in \"time\" command"))?)
         }
     } else {
         unreachable!();
@@ -132,10 +143,10 @@ fn run_command(command: Command) -> Result<()> {
             };
             Ok(())
         }
-        Command::Time => {
+        Command::Time(range) => {
             if let Some(url) = &config.url {
                 let mut t = term::stdout().ok_or(Error::CannotOpenTerminal)?;
-                let time_entries = request::time(url, &config.api_key)?;
+                let time_entries = request::time(url, &config.api_key, &range)?;
                 let total = time_entries.iter().fold(0.0, |sum, entry| sum + entry.hours);
                 let max_project_title_len = time_entries.iter()
                     .map(|entry| entry.project.name.len())

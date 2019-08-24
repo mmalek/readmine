@@ -27,6 +27,8 @@ pub enum Error {
     Terminal(term::Error),
     ChronoParse(chrono::ParseError),
     InvalidActivityName(String, Vec<TimeEntryActivity>),
+    InvalidTimeRangeFormat(String),
+    InvalidMonthOffset(i32),
 }
 
 impl std::error::Error for Error {}
@@ -119,6 +121,8 @@ impl fmt::Display for Error {
                 let names = activities.iter().skip(1).fold(first_name, |names, a| format!("{}, {}", names, a.name));
                 write!(f, "Invalid activity name \"{}\". Available values: {}", provided_name, names)
             }
+            Error::InvalidTimeRangeFormat(input) => write!(f, "Invalid format of time range \"{}\"", input),
+            Error::InvalidMonthOffset(offset) => write!(f, "Cannot use month+{} in time range", offset),
         }
     }
 }

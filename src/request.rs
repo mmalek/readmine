@@ -3,7 +3,8 @@ use crate::error::Error;
 use crate::result::Result;
 use crate::response;
 use crate::serialization_formats::*;
-use chrono::{Datelike, Duration, Local, NaiveDate};
+use crate::time_range::TimeRange;
+use chrono::{NaiveDate};
 use reqwest::Client;
 use rpassword::read_password_from_tty;
 use serde::{Serialize, Deserialize};
@@ -51,13 +52,9 @@ pub fn user(url: &String, api_key: &Option<String>) -> Result<response::User> {
     }
 }
 
-pub fn time(url: &String, api_key: &Option<String>) -> Result<Vec<response::TimeEntry>> {
-    let today = Local::today();
-    let from = today - Duration::days(today.weekday().num_days_from_monday() as i64);
-    let to = from + Duration::days(6);
-
-    let from = from.format(DATE_FORMAT).to_string();
-    let to = to.format(DATE_FORMAT).to_string();
+pub fn time(url: &String, api_key: &Option<String>, range: &TimeRange) -> Result<Vec<response::TimeEntry>> {
+    let from = range.from.format(DATE_FORMAT).to_string();
+    let to = range.to.format(DATE_FORMAT).to_string();
     let url = format!("{}/time_entries.json?user_id=me&from={}&to={}", url, from, to);
 
     let client = Client::new();
