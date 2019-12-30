@@ -1,7 +1,7 @@
 use crate::result::Result;
 use crate::serialization_formats::*;
 use chrono::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json;
 
 #[derive(Serialize, Deserialize)]
@@ -68,7 +68,7 @@ pub struct TimeEntryUser {
 
 #[derive(Serialize, Deserialize)]
 pub struct TimeEntriesResponse {
-    pub time_entries: Vec<TimeEntry>
+    pub time_entries: Vec<TimeEntry>,
 }
 
 pub fn parse_time_entries(text: &str) -> Result<Vec<TimeEntry>> {
@@ -78,7 +78,7 @@ pub fn parse_time_entries(text: &str) -> Result<Vec<TimeEntry>> {
 
 #[derive(Serialize, Deserialize)]
 pub struct TimeEntryResponse {
-    pub time_entry_activities: Vec<TimeEntryActivity>
+    pub time_entry_activities: Vec<TimeEntryActivity>,
 }
 
 pub fn parse_time_entry_activities(text: &str) -> Result<Vec<TimeEntryActivity>> {

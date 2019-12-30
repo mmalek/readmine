@@ -1,10 +1,10 @@
 use crate::error::Error;
 use crate::result::Result;
+use directories::ProjectDirs;
+use serde::{Deserialize, Serialize};
 use std::fs::{create_dir_all, File};
 use std::io::{Read, Write};
 use std::path::PathBuf;
-use directories::ProjectDirs;
-use serde::{Serialize, Deserialize};
 use toml;
 
 const CONFIG_FILE: &'static str = "config.toml";

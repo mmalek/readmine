@@ -1,11 +1,11 @@
+use crate::response::TimeEntryActivity;
+use chrono;
+use reqwest;
+use serde_json;
 use std::fmt;
 use std::io;
 use std::num::{ParseFloatError, ParseIntError};
 use std::str::Utf8Error;
-use chrono;
-use reqwest;
-use crate::response::TimeEntryActivity;
-use serde_json;
 use term;
 use toml;
 use url;
@@ -117,12 +117,26 @@ impl fmt::Display for Error {
             Error::Terminal(error) => write!(f, "Terminal error: {}", error),
             Error::ChronoParse(error) => write!(f, "Date/time parse error: {}", error),
             Error::InvalidActivityName(provided_name, activities) => {
-                let first_name = activities.first().map(|a| a.name.clone()).unwrap_or("".to_string());
-                let names = activities.iter().skip(1).fold(first_name, |names, a| format!("{}, {}", names, a.name));
-                write!(f, "Invalid activity name \"{}\". Available values: {}", provided_name, names)
+                let first_name = activities
+                    .first()
+                    .map(|a| a.name.clone())
+                    .unwrap_or("".to_string());
+                let names = activities
+                    .iter()
+                    .skip(1)
+                    .fold(first_name, |names, a| format!("{}, {}", names, a.name));
+                write!(
+                    f,
+                    "Invalid activity name \"{}\". Available values: {}",
+                    provided_name, names
+                )
             }
-            Error::InvalidTimeRangeFormat(input) => write!(f, "Invalid format of time range \"{}\"", input),
-            Error::InvalidMonthOffset(offset) => write!(f, "Cannot use month+{} in time range", offset),
+            Error::InvalidTimeRangeFormat(input) => {
+                write!(f, "Invalid format of time range \"{}\"", input)
+            }
+            Error::InvalidMonthOffset(offset) => {
+                write!(f, "Cannot use month+{} in time range", offset)
+            }
         }
     }
 }

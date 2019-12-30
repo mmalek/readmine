@@ -15,7 +15,7 @@ impl TimeRange {
         let range = TimePointRange::parse(input)?;
         let from = range.from.to_lower_bound()?;
         let to = range.to.to_upper_bound()?;
-        Ok(TimeRange{from, to})
+        Ok(TimeRange { from, to })
     }
 }
 
@@ -34,15 +34,21 @@ impl TimePoint {
     fn to_lower_bound_with_date(&self, today: NaiveDate) -> Result<NaiveDate> {
         match *self {
             TimePoint::Date(date) => Ok(date),
-            TimePoint::Week(offset) => {
-                Ok(today - Duration::days(today.weekday().num_days_from_monday() as i64) + Duration::weeks(offset as i64))
-            }
+            TimePoint::Week(offset) => Ok(today
+                - Duration::days(today.weekday().num_days_from_monday() as i64)
+                + Duration::weeks(offset as i64)),
             TimePoint::Month(offset) => {
                 let year_offset = offset / 12;
                 let month_offset = offset % 12;
-                let date = today.with_year(today.year() + year_offset).ok_or(Error::InvalidMonthOffset(offset))?;
-                let date = date.with_month((date.month() as i32 + month_offset) as u32).ok_or(Error::InvalidMonthOffset(offset))?;
-                Ok(date.with_day(1).expect("Cannot use '1' as day of month (?)"))
+                let date = today
+                    .with_year(today.year() + year_offset)
+                    .ok_or(Error::InvalidMonthOffset(offset))?;
+                let date = date
+                    .with_month((date.month() as i32 + month_offset) as u32)
+                    .ok_or(Error::InvalidMonthOffset(offset))?;
+                Ok(date
+                    .with_day(1)
+                    .expect("Cannot use '1' as day of month (?)"))
             }
         }
     }
@@ -54,22 +60,31 @@ impl TimePoint {
     fn to_upper_bound_with_date(&self, today: NaiveDate) -> Result<NaiveDate> {
         match *self {
             TimePoint::Date(date) => Ok(date),
-            TimePoint::Week(offset) => {
-                Ok(today + Duration::days(6 - today.weekday().num_days_from_monday() as i64) + Duration::weeks(offset as i64))
-            }
+            TimePoint::Week(offset) => Ok(today
+                + Duration::days(6 - today.weekday().num_days_from_monday() as i64)
+                + Duration::weeks(offset as i64)),
             TimePoint::Month(offset) => {
                 let year_offset = offset / 12;
                 let month_offset = offset % 12;
-                let date = today.with_year(today.year() + year_offset).ok_or(Error::InvalidMonthOffset(offset))?;
-                let date = date.with_month((date.month() as i32 + month_offset) as u32).ok_or(Error::InvalidMonthOffset(offset))?;
-                let date = date.with_day(1).expect("Cannot use '1' as day of month (?)");
+                let date = today
+                    .with_year(today.year() + year_offset)
+                    .ok_or(Error::InvalidMonthOffset(offset))?;
+                let date = date
+                    .with_month((date.month() as i32 + month_offset) as u32)
+                    .ok_or(Error::InvalidMonthOffset(offset))?;
+                let date = date
+                    .with_day(1)
+                    .expect("Cannot use '1' as day of month (?)");
                 if date.month() < 12 {
-                    date.with_month(date.month()+1)
+                    date.with_month(date.month() + 1)
                         .map(|date| date - Duration::days(1))
                         .ok_or(Error::InvalidMonthOffset(offset))
                 } else {
-                    Ok(date.with_month(12).expect("Cannot use '12' as a month number (?)")
-                        .with_day(31).expect("Cannot use '31' as day number of December (?)"))
+                    Ok(date
+                        .with_month(12)
+                        .expect("Cannot use '12' as a month number (?)")
+                        .with_day(31)
+                        .expect("Cannot use '31' as day number of December (?)"))
                 }
             }
         }
@@ -127,7 +142,7 @@ impl TimePointRange {
             from.clone()
         };
 
-        Ok(TimePointRange{from, to})
+        Ok(TimePointRange { from, to })
     }
 }
 
@@ -159,7 +174,8 @@ mod tests {
     fn parse_time_point_iso_date() {
         assert_eq!(
             parse_time_point("2019-01-23").unwrap(),
-            TimePoint::Date(NaiveDate::from_ymd(2019, 01, 23)));
+            TimePoint::Date(NaiveDate::from_ymd(2019, 01, 23))
+        );
     }
 
     #[test]
@@ -171,30 +187,33 @@ mod tests {
     fn week_range() {
         assert_eq!(
             TimePointRange::parse("week-1..week+1").unwrap(),
-            TimePointRange{
+            TimePointRange {
                 from: TimePoint::Week(-1),
                 to: TimePoint::Week(1),
-            });
+            }
+        );
     }
 
     #[test]
     fn iso_range() {
         assert_eq!(
             TimePointRange::parse("2019-01-23..2019-05-09").unwrap(),
-            TimePointRange{
+            TimePointRange {
                 from: TimePoint::Date(NaiveDate::from_ymd(2019, 01, 23)),
                 to: TimePoint::Date(NaiveDate::from_ymd(2019, 05, 09)),
-            });
+            }
+        );
     }
 
     #[test]
     fn mixed_range() {
         assert_eq!(
             TimePointRange::parse("2019-01-23..month+3").unwrap(),
-            TimePointRange{
+            TimePointRange {
                 from: TimePoint::Date(NaiveDate::from_ymd(2019, 01, 23)),
                 to: TimePoint::Month(3),
-            });
+            }
+        );
     }
 
     #[test]
@@ -202,7 +221,9 @@ mod tests {
         let input_date = NaiveDate::from_ymd(2019, 01, 23);
         let today = NaiveDate::from_ymd(2019, 8, 24);
         assert_eq!(
-            TimePoint::Date(input_date).to_lower_bound_with_date(today).unwrap(),
+            TimePoint::Date(input_date)
+                .to_lower_bound_with_date(today)
+                .unwrap(),
             NaiveDate::from_ymd(2019, 1, 23)
         );
     }
@@ -212,7 +233,9 @@ mod tests {
         let input_date = NaiveDate::from_ymd(2019, 01, 23);
         let today = NaiveDate::from_ymd(2019, 8, 24);
         assert_eq!(
-            TimePoint::Date(input_date).to_upper_bound_with_date(today).unwrap(),
+            TimePoint::Date(input_date)
+                .to_upper_bound_with_date(today)
+                .unwrap(),
             NaiveDate::from_ymd(2019, 1, 23)
         );
     }
@@ -220,7 +243,9 @@ mod tests {
     #[test]
     fn current_week_to_lower_bound() {
         assert_eq!(
-            TimePoint::Week(0).to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 24)).unwrap(),
+            TimePoint::Week(0)
+                .to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 24))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 19)
         );
     }
@@ -228,7 +253,9 @@ mod tests {
     #[test]
     fn current_week_monday_to_lower_bound() {
         assert_eq!(
-            TimePoint::Week(0).to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 19)).unwrap(),
+            TimePoint::Week(0)
+                .to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 19))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 19)
         );
     }
@@ -236,7 +263,9 @@ mod tests {
     #[test]
     fn current_week_sunday_to_lower_bound() {
         assert_eq!(
-            TimePoint::Week(0).to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 25)).unwrap(),
+            TimePoint::Week(0)
+                .to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 25))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 19)
         );
     }
@@ -244,7 +273,9 @@ mod tests {
     #[test]
     fn current_week_to_upper_bound() {
         assert_eq!(
-            TimePoint::Week(0).to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 24)).unwrap(),
+            TimePoint::Week(0)
+                .to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 24))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 25)
         );
     }
@@ -252,7 +283,9 @@ mod tests {
     #[test]
     fn current_week_monday_to_upper_bound() {
         assert_eq!(
-            TimePoint::Week(0).to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 19)).unwrap(),
+            TimePoint::Week(0)
+                .to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 19))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 25)
         );
     }
@@ -260,7 +293,9 @@ mod tests {
     #[test]
     fn current_week_sunday_to_upper_bound() {
         assert_eq!(
-            TimePoint::Week(0).to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 25)).unwrap(),
+            TimePoint::Week(0)
+                .to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 25))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 25)
         );
     }
@@ -268,7 +303,9 @@ mod tests {
     #[test]
     fn last_week_to_lower_bound() {
         assert_eq!(
-            TimePoint::Week(-1).to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 24)).unwrap(),
+            TimePoint::Week(-1)
+                .to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 24))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 12)
         );
     }
@@ -276,7 +313,9 @@ mod tests {
     #[test]
     fn last_week_to_upper_bound() {
         assert_eq!(
-            TimePoint::Week(-1).to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 24)).unwrap(),
+            TimePoint::Week(-1)
+                .to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 24))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 18)
         );
     }
@@ -284,7 +323,9 @@ mod tests {
     #[test]
     fn next_week_to_lower_bound() {
         assert_eq!(
-            TimePoint::Week(1).to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 24)).unwrap(),
+            TimePoint::Week(1)
+                .to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 24))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 26)
         );
     }
@@ -292,7 +333,9 @@ mod tests {
     #[test]
     fn next_week_to_upper_bound() {
         assert_eq!(
-            TimePoint::Week(1).to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 24)).unwrap(),
+            TimePoint::Week(1)
+                .to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 24))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 9, 1)
         );
     }
@@ -300,7 +343,9 @@ mod tests {
     #[test]
     fn current_month_to_lower_bound() {
         assert_eq!(
-            TimePoint::Month(0).to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 24)).unwrap(),
+            TimePoint::Month(0)
+                .to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 24))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 1)
         );
     }
@@ -308,7 +353,9 @@ mod tests {
     #[test]
     fn current_month_day_1_to_lower_bound() {
         assert_eq!(
-            TimePoint::Month(0).to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 1)).unwrap(),
+            TimePoint::Month(0)
+                .to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 1))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 1)
         );
     }
@@ -316,7 +363,9 @@ mod tests {
     #[test]
     fn current_month_day_31_to_lower_bound() {
         assert_eq!(
-            TimePoint::Month(0).to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 31)).unwrap(),
+            TimePoint::Month(0)
+                .to_lower_bound_with_date(NaiveDate::from_ymd(2019, 8, 31))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 1)
         );
     }
@@ -324,7 +373,9 @@ mod tests {
     #[test]
     fn current_month_to_upper_bound() {
         assert_eq!(
-            TimePoint::Month(0).to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 24)).unwrap(),
+            TimePoint::Month(0)
+                .to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 24))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 31)
         );
     }
@@ -332,7 +383,9 @@ mod tests {
     #[test]
     fn current_month_day_1_to_upper_bound() {
         assert_eq!(
-            TimePoint::Month(0).to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 1)).unwrap(),
+            TimePoint::Month(0)
+                .to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 1))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 31)
         );
     }
@@ -340,7 +393,9 @@ mod tests {
     #[test]
     fn current_month_day_31_to_upper_bound() {
         assert_eq!(
-            TimePoint::Month(0).to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 31)).unwrap(),
+            TimePoint::Month(0)
+                .to_upper_bound_with_date(NaiveDate::from_ymd(2019, 8, 31))
+                .unwrap(),
             NaiveDate::from_ymd(2019, 8, 31)
         );
     }

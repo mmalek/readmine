@@ -1,12 +1,9 @@
 pub mod redmine_date_format {
     use crate::constants::DATE_FORMAT;
     use chrono::NaiveDate;
-    use serde::{self, Deserialize, Serializer, Deserializer};
+    use serde::{self, Deserialize, Deserializer, Serializer};
 
-    pub fn serialize<S>(
-        date: &NaiveDate,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -14,9 +11,7 @@ pub mod redmine_date_format {
         serializer.serialize_str(&s)
     }
 
-    pub fn deserialize<'de, D>(
-        deserializer: D,
-    ) -> Result<NaiveDate, D::Error>
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -28,12 +23,9 @@ pub mod redmine_date_format {
 pub mod redmine_datetime_format {
     use crate::constants::DATE_TIME_FORMAT;
     use chrono::NaiveDateTime;
-    use serde::{self, Deserialize, Serializer, Deserializer};
+    use serde::{self, Deserialize, Deserializer, Serializer};
 
-    pub fn serialize<S>(
-        date: &NaiveDateTime,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(date: &NaiveDateTime, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -41,9 +33,7 @@ pub mod redmine_datetime_format {
         serializer.serialize_str(&s)
     }
 
-    pub fn deserialize<'de, D>(
-        deserializer: D,
-    ) -> Result<NaiveDateTime, D::Error>
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
     where
         D: Deserializer<'de>,
     {

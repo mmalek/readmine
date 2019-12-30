@@ -1,13 +1,13 @@
 use crate::constants::DATE_FORMAT;
 use crate::error::Error;
-use crate::result::Result;
 use crate::response;
+use crate::result::Result;
 use crate::serialization_formats::*;
 use crate::time_range::TimeRange;
-use chrono::{NaiveDate};
+use chrono::NaiveDate;
 use reqwest::Client;
 use rpassword::read_password_from_tty;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{self, Write};
 
 pub fn login(url: &String, login_name: Option<String>) -> Result<response::User> {
@@ -27,7 +27,10 @@ pub fn login(url: &String, login_name: Option<String>) -> Result<response::User>
 
     let url = format!("{}/users/current.json", url);
     let client = Client::new();
-    let mut res = client.get(&url).basic_auth(&login_name, Some(&password)).send()?;
+    let mut res = client
+        .get(&url)
+        .basic_auth(&login_name, Some(&password))
+        .send()?;
     let status = res.status();
     if status == reqwest::StatusCode::OK {
         response::parse_user(&res.text()?)
@@ -52,10 +55,17 @@ pub fn user(url: &String, api_key: &Option<String>) -> Result<response::User> {
     }
 }
 
-pub fn time(url: &String, api_key: &Option<String>, range: &TimeRange) -> Result<Vec<response::TimeEntry>> {
+pub fn time(
+    url: &String,
+    api_key: &Option<String>,
+    range: &TimeRange,
+) -> Result<Vec<response::TimeEntry>> {
     let from = range.from.format(DATE_FORMAT).to_string();
     let to = range.to.format(DATE_FORMAT).to_string();
-    let url = format!("{}/time_entries.json?user_id=me&from={}&to={}", url, from, to);
+    let url = format!(
+        "{}/time_entries.json?user_id=me&from={}&to={}",
+        url, from, to
+    );
 
     let client = Client::new();
     let mut request_builder = client.get(&url);
@@ -71,7 +81,10 @@ pub fn time(url: &String, api_key: &Option<String>, range: &TimeRange) -> Result
     }
 }
 
-pub fn activities(url: &String, api_key: &Option<String>) -> Result<Vec<response::TimeEntryActivity>> {
+pub fn activities(
+    url: &String,
+    api_key: &Option<String>,
+) -> Result<Vec<response::TimeEntryActivity>> {
     let url = format!("{}/enumerations/time_entry_activities.json", url);
     let client = Client::new();
     let mut request_builder = client.get(&url);
@@ -104,7 +117,7 @@ pub struct TimeEntry {
 
 pub fn time_add(url: &String, api_key: &Option<String>, time_entry: TimeEntry) -> Result<()> {
     let url = format!("{}/time_entries.json", url);
-    let time_entry_request = TimeEntryRequest{time_entry};
+    let time_entry_request = TimeEntryRequest { time_entry };
     let client = Client::new();
     let mut request_builder = client.post(&url).json(&time_entry_request);
     if let Some(api_key) = api_key {
