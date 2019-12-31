@@ -10,7 +10,7 @@ use rpassword::read_password_from_tty;
 use serde::{Deserialize, Serialize};
 use std::io::{self, Write};
 
-pub fn login(url: &String, login_name: Option<String>) -> Result<response::User> {
+pub async fn login(url: &String, login_name: Option<String>) -> Result<response::User> {
     let login_name = if let Some(name) = login_name {
         name
     } else {
@@ -27,35 +27,36 @@ pub fn login(url: &String, login_name: Option<String>) -> Result<response::User>
 
     let url = format!("{}/users/current.json", url);
     let client = Client::new();
-    let mut res = client
+    let res = client
         .get(&url)
         .basic_auth(&login_name, Some(&password))
-        .send()?;
+        .send()
+        .await?;
     let status = res.status();
     if status == reqwest::StatusCode::OK {
-        response::parse_user(&res.text()?)
+        response::parse_user(&res.text().await?)
     } else {
         Err(Error::RequestFailed(status))
     }
 }
 
-pub fn user(url: &String, api_key: &Option<String>) -> Result<response::User> {
+pub async fn user(url: &String, api_key: &Option<String>) -> Result<response::User> {
     let url = format!("{}/users/current.json", url);
     let client = Client::new();
     let mut request_builder = client.get(&url);
     if let Some(api_key) = api_key {
         request_builder = request_builder.header("X-Redmine-API-Key", api_key.clone());
     }
-    let mut res = request_builder.send()?;
+    let res = request_builder.send().await?;
     let status = res.status();
     if status == reqwest::StatusCode::OK {
-        response::parse_user(&res.text()?)
+        response::parse_user(&res.text().await?)
     } else {
         Err(Error::RequestFailed(status))
     }
 }
 
-pub fn time(
+pub async fn time(
     url: &String,
     api_key: &Option<String>,
     range: &TimeRange,
@@ -72,16 +73,16 @@ pub fn time(
     if let Some(api_key) = api_key {
         request_builder = request_builder.header("X-Redmine-API-Key", api_key.clone());
     }
-    let mut res = request_builder.send()?;
+    let res = request_builder.send().await?;
     let status = res.status();
     if status == reqwest::StatusCode::OK {
-        response::parse_time_entries(&res.text()?)
+        response::parse_time_entries(&res.text().await?)
     } else {
         Err(Error::RequestFailed(status))
     }
 }
 
-pub fn activities(
+pub async fn activities(
     url: &String,
     api_key: &Option<String>,
 ) -> Result<Vec<response::TimeEntryActivity>> {
@@ -91,10 +92,10 @@ pub fn activities(
     if let Some(api_key) = api_key {
         request_builder = request_builder.header("X-Redmine-API-Key", api_key.clone());
     }
-    let mut res = request_builder.send()?;
+    let res = request_builder.send().await?;
     let status = res.status();
     if status == reqwest::StatusCode::OK {
-        response::parse_time_entry_activities(&res.text()?)
+        response::parse_time_entry_activities(&res.text().await?)
     } else {
         Err(Error::RequestFailed(status))
     }
@@ -115,7 +116,7 @@ pub struct TimeEntry {
     pub comments: Option<String>,
 }
 
-pub fn time_add(url: &String, api_key: &Option<String>, time_entry: TimeEntry) -> Result<()> {
+pub async fn time_add(url: &String, api_key: &Option<String>, time_entry: TimeEntry) -> Result<()> {
     let url = format!("{}/time_entries.json", url);
     let time_entry_request = TimeEntryRequest { time_entry };
     let client = Client::new();
@@ -123,7 +124,7 @@ pub fn time_add(url: &String, api_key: &Option<String>, time_entry: TimeEntry) -
     if let Some(api_key) = api_key {
         request_builder = request_builder.header("X-Redmine-API-Key", api_key.clone());
     }
-    let res = request_builder.send()?;
+    let res = request_builder.send().await?;
     let status = res.status();
     if status == reqwest::StatusCode::CREATED {
         Ok(())

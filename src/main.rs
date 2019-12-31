@@ -53,14 +53,15 @@ impl TimeEntry {
     }
 }
 
-fn main() {
-    if let Err(error) = just_run() {
+#[tokio::main]
+async fn main() {
+    if let Err(error) = just_run().await {
         eprintln!("{}", error);
         std::process::exit(1);
     }
 }
 
-fn just_run() -> Result<()> {
+async fn just_run() -> Result<()> {
     let matches = cli::build_cli().get_matches();
 
     let command = if let Some(matches) = matches.subcommand_matches("login") {
@@ -111,15 +112,15 @@ fn just_run() -> Result<()> {
         unreachable!();
     };
 
-    run_command(command)
+    run_command(command).await
 }
 
-fn run_command(command: Command) -> Result<()> {
+async fn run_command(command: Command) -> Result<()> {
     let mut config = Config::load()?;
 
     match command {
         Command::Login { url, email } => {
-            let user = request::login(&url, email)?;
+            let user = request::login(&url, email).await?;
             config.url = Some(url);
             config.api_key = Some(user.api_key);
             config.save()
@@ -131,7 +132,7 @@ fn run_command(command: Command) -> Result<()> {
         }
         Command::User => {
             if let Some(url) = &config.url {
-                let user = request::user(url, &config.api_key)?;
+                let user = request::user(url, &config.api_key).await?;
                 println!("id: {}\nlogin: {}\nfirst name: {}\nlast name: {}\nmail: {}\ncreated on: {}\nlast login on: {}\napi key: {}",
                     user.id, user.login, user.firstname, user.lastname, user.mail, user.created_on, user.last_login_on, user.api_key)
             } else {
@@ -142,7 +143,7 @@ fn run_command(command: Command) -> Result<()> {
         Command::Time(range) => {
             if let Some(url) = &config.url {
                 let mut t = term::stdout().ok_or(Error::CannotOpenTerminal)?;
-                let time_entries = request::time(url, &config.api_key, &range)?;
+                let time_entries = request::time(url, &config.api_key, &range).await?;
                 let total = time_entries
                     .iter()
                     .fold(0.0, |sum, entry| sum + entry.hours);
@@ -182,9 +183,9 @@ fn run_command(command: Command) -> Result<()> {
         }
         Command::TimeAdd(time_entry) => {
             if let Some(url) = &config.url {
-                let activities = request::activities(url, &config.api_key)?;
+                let activities = request::activities(url, &config.api_key).await?;
                 let time_entry = time_entry.into_request(&activities)?;
-                request::time_add(url, &config.api_key, time_entry)
+                request::time_add(url, &config.api_key, time_entry).await
             } else {
                 println!("Server details not set. Please use \"login\" command first.");
                 Ok(())

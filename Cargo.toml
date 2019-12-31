@@ -13,10 +13,11 @@ clap = '^2.32'
 directories = '^1.0'
 hyper = '0.12'
 hyper-tls = '0.3.1'
-reqwest = '0.9.8'
+reqwest = { version = '0.10.0', features = ['json'] }
 rpassword = '^3.0'
 serde = { version = '^1.0', features = ['derive'] }
 serde_json = '^1.0'
 term = '0.5.2'
+tokio = { version = '0.2.6', features = ["full"] }
 toml = '0.4.6'
 url = '^1.7'
