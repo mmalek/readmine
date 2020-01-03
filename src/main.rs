@@ -6,6 +6,7 @@ mod request;
 mod response;
 mod result;
 mod serialization_formats;
+mod time_log;
 mod time_range;
 
 use crate::config::Config;
@@ -81,10 +82,9 @@ async fn just_run() -> Result<()> {
                 .value_of("date")
                 .expect("missing \"date\" parameter in \"time add\" command");
             let spent_on = NaiveDate::parse_from_str(spent_on, DATE_FORMAT)?;
-            let hours: f32 = matches
+            let hours: f32 = time_log::parse_hours(matches
                 .value_of("hours")
-                .expect("missing \"hours\" parameter in \"time add\" command")
-                .parse()?;
+                .expect("missing \"hours\" parameter in \"time add\" command"))?;
             let issue_id: i32 = matches
                 .value_of("issue_id")
                 .expect("missing \"issue_id\" parameter in \"time add\" command")
