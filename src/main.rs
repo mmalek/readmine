@@ -82,13 +82,16 @@ async fn just_run() -> Result<()> {
                 .value_of("date")
                 .expect("missing \"date\" parameter in \"time add\" command");
             let spent_on = NaiveDate::parse_from_str(spent_on, DATE_FORMAT)?;
-            let hours: f32 = time_log::parse_hours(matches
-                .value_of("hours")
-                .expect("missing \"hours\" parameter in \"time add\" command"))?;
-            let issue_id: i32 = matches
-                .value_of("issue_id")
-                .expect("missing \"issue_id\" parameter in \"time add\" command")
-                .parse()?;
+            let hours: f32 = time_log::parse_hours(
+                matches
+                    .value_of("hours")
+                    .expect("missing \"hours\" parameter in \"time add\" command"),
+            )?;
+            let issue_id: i32 = time_log::parse_issue(
+                matches
+                    .value_of("issue_id")
+                    .expect("missing \"issue_id\" parameter in \"time add\" command"),
+            )?;
             let activity_name = matches
                 .value_of("activity")
                 .expect("missing \"activity\" parameter in \"time add\" command")
