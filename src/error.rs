@@ -120,7 +120,7 @@ impl fmt::Display for Error {
                 let first_name = activities
                     .first()
                     .map(|a| a.name.clone())
-                    .unwrap_or("".to_string());
+                    .unwrap_or_else(String::new);
                 let names = activities
                     .iter()
                     .skip(1)

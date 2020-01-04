@@ -7,7 +7,7 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 use toml;
 
-const CONFIG_FILE: &'static str = "config.toml";
+const CONFIG_FILE: &str = "config.toml";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {

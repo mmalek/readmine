@@ -10,7 +10,7 @@ use rpassword::read_password_from_tty;
 use serde::{Deserialize, Serialize};
 use std::io::{self, Write};
 
-pub async fn login(url: &String, login_name: Option<String>) -> Result<response::User> {
+pub async fn login(url: &str, login_name: Option<String>) -> Result<response::User> {
     let login_name = if let Some(name) = login_name {
         name
     } else {
@@ -40,7 +40,7 @@ pub async fn login(url: &String, login_name: Option<String>) -> Result<response:
     }
 }
 
-pub async fn user(url: &String, api_key: &Option<String>) -> Result<response::User> {
+pub async fn user(url: &str, api_key: &Option<String>) -> Result<response::User> {
     let url = format!("{}/users/current.json", url);
     let client = Client::new();
     let mut request_builder = client.get(&url);
@@ -57,7 +57,7 @@ pub async fn user(url: &String, api_key: &Option<String>) -> Result<response::Us
 }
 
 pub async fn time(
-    url: &String,
+    url: &str,
     api_key: &Option<String>,
     range: &TimeRange,
 ) -> Result<Vec<response::TimeEntry>> {
@@ -83,7 +83,7 @@ pub async fn time(
 }
 
 pub async fn activities(
-    url: &String,
+    url: &str,
     api_key: &Option<String>,
 ) -> Result<Vec<response::TimeEntryActivity>> {
     let url = format!("{}/enumerations/time_entry_activities.json", url);
@@ -116,7 +116,7 @@ pub struct TimeEntry {
     pub comments: Option<String>,
 }
 
-pub async fn time_add(url: &String, api_key: &Option<String>, time_entry: TimeEntry) -> Result<()> {
+pub async fn time_add(url: &str, api_key: &Option<String>, time_entry: TimeEntry) -> Result<()> {
     let url = format!("{}/time_entries.json", url);
     let time_entry_request = TimeEntryRequest { time_entry };
     let client = Client::new();

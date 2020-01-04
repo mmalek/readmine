@@ -36,13 +36,13 @@ pub struct TimeEntry {
 impl TimeEntry {
     fn into_request(
         self,
-        activities: &Vec<response::TimeEntryActivity>,
+        activities: &[response::TimeEntryActivity],
     ) -> Result<request::TimeEntry> {
         activities
             .iter()
             .find(|activity| self.activity_name == activity.name)
             .ok_or_else(|| {
-                error::Error::InvalidActivityName(self.activity_name.clone(), activities.clone())
+                error::Error::InvalidActivityName(self.activity_name.clone(), activities.to_owned())
             })
             .map(|activity| request::TimeEntry {
                 issue_id: self.issue_id,

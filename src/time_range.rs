@@ -8,7 +8,7 @@ pub struct TimeRange {
     pub to: NaiveDate,
 }
 
-const RANGE_SEPARATOR: &'static str = "..";
+const RANGE_SEPARATOR: &str = "..";
 
 impl TimeRange {
     pub fn parse(input: &str) -> Result<TimeRange> {
@@ -92,7 +92,7 @@ impl TimePoint {
 }
 
 fn parse_week_month_offset(input: &str) -> Option<i32> {
-    if input.len() == 0 {
+    if input.is_empty() {
         Some(0)
     } else if input.chars().nth(0) == Some('+') && input.len() > 1 {
         input[1..].parse().ok()
@@ -103,22 +103,22 @@ fn parse_week_month_offset(input: &str) -> Option<i32> {
     }
 }
 
-const MONTH_PLACEHOLDER: &'static str = "month";
-const WEEK_PLACEHOLDER: &'static str = "week";
+const MONTH_PLACEHOLDER: &str = "month";
+const WEEK_PLACEHOLDER: &str = "week";
 
 fn parse_time_point(input: &str) -> Result<TimePoint> {
     if input.starts_with(MONTH_PLACEHOLDER) {
         parse_week_month_offset(&input[MONTH_PLACEHOLDER.len()..])
             .ok_or_else(|| Error::InvalidTimeRangeFormat(input.to_owned()))
-            .map(|offset| TimePoint::Month(offset))
+            .map(TimePoint::Month)
     } else if input.starts_with(WEEK_PLACEHOLDER) {
         parse_week_month_offset(&input[WEEK_PLACEHOLDER.len()..])
             .ok_or_else(|| Error::InvalidTimeRangeFormat(input.to_owned()))
-            .map(|offset| TimePoint::Week(offset))
+            .map(TimePoint::Week)
     } else {
         NaiveDate::parse_from_str(input, "%Y-%m-%d")
             .map_err(|_| Error::InvalidTimeRangeFormat(input.to_owned()))
-            .map(|date| TimePoint::Date(date))
+            .map(TimePoint::Date)
     }
 }
 
@@ -131,7 +131,7 @@ struct TimePointRange {
 impl TimePointRange {
     fn parse(input: &str) -> Result<TimePointRange> {
         let sep_pos = input.find(RANGE_SEPARATOR);
-        let from_end = sep_pos.unwrap_or(input.len());
+        let from_end = sep_pos.unwrap_or_else(|| input.len());
 
         let from = parse_time_point(&input[..from_end])?;
 
