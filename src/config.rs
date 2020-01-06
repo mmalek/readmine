@@ -20,7 +20,8 @@ impl Config {
         if let Ok(mut file) = File::open(config_dir()?.join(CONFIG_FILE)) {
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
-            toml::from_str(contents.as_str()).map_err(|e| e.into())
+            let config = toml::from_str(&contents)?;
+            Ok(config)
         } else {
             Ok(Self {
                 url: None,

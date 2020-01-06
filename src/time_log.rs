@@ -1,19 +1,20 @@
+use crate::error::Error::{InvalidIssueId, InvalidTimeLogHours};
 use crate::result::Result;
 
 pub fn parse_hours(input: &str) -> Result<f32> {
     let suffixes: &[_] = &[' ', 'h', 'H'];
-
     let trimmed_input = input.trim_start().trim_end_matches(suffixes);
-
-    Ok(trimmed_input.parse()?)
+    trimmed_input
+        .parse()
+        .map_err(|_| InvalidTimeLogHours(input.to_owned()))
 }
 
 pub fn parse_issue(input: &str) -> Result<i32> {
     let prefixes: &[_] = &[' ', '#'];
-
     let trimmed_input = input.trim_start_matches(prefixes).trim_end();
-
-    Ok(trimmed_input.parse()?)
+    trimmed_input
+        .parse()
+        .map_err(|_| InvalidIssueId(input.to_owned()))
 }
 
 #[cfg(test)]

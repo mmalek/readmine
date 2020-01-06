@@ -4,8 +4,6 @@ use reqwest;
 use serde_json;
 use std::fmt;
 use std::io;
-use std::num::{ParseFloatError, ParseIntError};
-use std::str::Utf8Error;
 use term;
 use toml;
 use url;
@@ -20,9 +18,8 @@ pub enum Error {
     Reqwest(reqwest::Error),
     RequestFailed(reqwest::StatusCode),
     JsonParse(serde_json::Error),
-    FloatParse(ParseFloatError),
-    IntParse(ParseIntError),
-    Utf8Parse(Utf8Error),
+    InvalidTimeLogHours(String),
+    InvalidIssueId(String),
     CannotOpenTerminal,
     Terminal(term::Error),
     ChronoParse(chrono::ParseError),
@@ -69,24 +66,6 @@ impl From<serde_json::Error> for Error {
     }
 }
 
-impl From<ParseFloatError> for Error {
-    fn from(error: ParseFloatError) -> Self {
-        Error::FloatParse(error)
-    }
-}
-
-impl From<ParseIntError> for Error {
-    fn from(error: ParseIntError) -> Self {
-        Error::IntParse(error)
-    }
-}
-
-impl From<Utf8Error> for Error {
-    fn from(error: Utf8Error) -> Self {
-        Error::Utf8Parse(error)
-    }
-}
-
 impl From<term::Error> for Error {
     fn from(error: term::Error) -> Self {
         Error::Terminal(error)
@@ -110,9 +89,8 @@ impl fmt::Display for Error {
             Error::Reqwest(error) => write!(f, "Web request failed: {}", error),
             Error::RequestFailed(status) => write!(f, "Request failed ({})", status),
             Error::JsonParse(error) => write!(f, "JSON parse error: {}", error),
-            Error::FloatParse(error) => write!(f, "Float parse error: {}", error),
-            Error::IntParse(error) => write!(f, "Int parse error: {}", error),
-            Error::Utf8Parse(error) => write!(f, "UTF-8 parse error: {}", error),
+            Error::InvalidTimeLogHours(arg) => write!(f, "Invalid hours time log entry: '{}'", arg),
+            Error::InvalidIssueId(arg) => write!(f, "Invalid issue id entry: '{}'", arg),
             Error::CannotOpenTerminal => write!(f, "Cannot open terminal interface"),
             Error::Terminal(error) => write!(f, "Terminal error: {}", error),
             Error::ChronoParse(error) => write!(f, "Date/time parse error: {}", error),
