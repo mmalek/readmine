@@ -155,6 +155,11 @@ async fn run_command(command: Command) -> Result<()> {
                     .map(|entry| entry.project.name.len())
                     .max()
                     .unwrap_or(0);
+                let max_activity_len = time_entries
+                    .iter()
+                    .map(|entry| entry.activity.name.len())
+                    .max()
+                    .unwrap_or(0);
                 for entry in time_entries {
                     t.fg(term::color::WHITE)?;
                     write!(t, "{}   ", entry.spent_on)?;
@@ -168,6 +173,12 @@ async fn run_command(command: Command) -> Result<()> {
                         entry.issue.id,
                         entry.project.name,
                         width = max_project_title_len
+                    )?;
+                    write!(
+                        t,
+                        "{:width$}    ",
+                        entry.activity.name,
+                        width = max_activity_len
                     )?;
                     t.fg(term::color::YELLOW)?;
                     writeln!(t, "{}", entry.comments)?;
